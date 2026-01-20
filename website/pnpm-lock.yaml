@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@astrojs/mdx':
+        specifier: ^4.3.13
+        version: 4.3.13(astro@5.16.11(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.55.2)(typescript@5.9.3))
       '@astrojs/react':
         specifier: ^4.4.2
         version: 4.4.2(@types/react-dom@19.2.3(@types/react@19.2.9))(@types/react@19.2.9)(jiti@2.6.1)(lightningcss@1.30.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -29,6 +32,9 @@ importers:
       astro:
         specifier: ^5.6.1
         version: 5.16.11(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.55.2)(typescript@5.9.3)
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
       react:
         specifier: ^19.2.3
         version: 19.2.3
@@ -38,6 +44,9 @@ importers:
       sharp:
         specifier: ^0.34.2
         version: 0.34.5
+      tailwind-merge:
+        specifier: ^3.4.0
+        version: 3.4.0
       tailwindcss:
         specifier: ^4.1.18
         version: 4.1.18
@@ -1935,6 +1944,9 @@ packages:
     resolution: {integrity: sha512-VvrHQ+9uniE+Mvx3+C9IEe/lWasXCU0nXMY2kZeLrHNICuRiC8uMPyM14UEaMOFA5mhyQqEkB02VoQ16n3DLaw==}
     engines: {node: '>=16'}
     hasBin: true
+
+  tailwind-merge@3.4.0:
+    resolution: {integrity: sha512-uSaO4gnW+b3Y2aWoWfFpX62vn2sR3skfhbjsEnaBI81WD1wBLlHZe5sWf0AqjksNdYTbGBEd0UasQMT3SNV15g==}
 
   tailwindcss@4.1.18:
     resolution: {integrity: sha512-4+Z+0yiYyEtUVCScyfHCxOYP06L5Ne+JiHhY2IjR2KWMIWhJOYZKLSGZaP5HkZ8+bY0cxfzwDE5uOmzFXyIwxw==}
@@ -4670,6 +4682,8 @@ snapshots:
       csso: 5.0.5
       picocolors: 1.1.1
       sax: 1.4.4
+
+  tailwind-merge@3.4.0: {}
 
   tailwindcss@4.1.18: {}
 
