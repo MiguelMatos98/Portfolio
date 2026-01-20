@@ -1,0 +1,21 @@
+# build output
+website/dist/
+
+# generated types
+website/.astro/
+
+# dependencies
+website/node_modules/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# environment variables
+website/.env
+website/.env.production
+
+# macOS-specific files
+.DS_Store
