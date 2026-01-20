@@ -1,0 +1,75 @@
+---
+title: Projects
+description: A showcase of my personal and professional projects.
+
+---
+
+import { Card, CardGrid, Badge, Icon, LinkCard } from '@astrojs/starlight/components';
+
+## Featured Projects
+
+<CardGrid stagger>
+  <Card title="Project Alpha" icon="rocket">
+    A full-stack web application built with modern technologies. Features real-time collaboration, authentication, and a beautiful UI.
+
+    <Badge text="React" variant="tip" />
+    <Badge text="Node.js" variant="note" />
+    <Badge text="PostgreSQL" variant="caution" />
+  </Card>
+
+  <Card title="CLI Tool" icon="terminal">
+    A command-line utility that automates repetitive tasks and improves developer productivity.
+
+    <Badge text="Rust" variant="tip" />
+    <Badge text="Open Source" variant="success" />
+  </Card>
+
+  <Card title="Mobile App" icon="smartphone">
+    Cross-platform mobile application for tracking personal goals and habits with offline-first architecture.
+
+    <Badge text="React Native" variant="tip" />
+    <Badge text="TypeScript" variant="note" />
+  </Card>
+
+  <Card title="Design System" icon="puzzle">
+    A comprehensive component library with accessibility-first approach and full documentation.
+
+    <Badge text="Figma" variant="tip" />
+    <Badge text="Storybook" variant="note" />
+  </Card>
+</CardGrid>
+
+---
+
+## Open Source Contributions
+
+<LinkCard
+  title="Astro"
+  description="Contributed performance improvements and bug fixes to the Astro framework."
+  href="https://github.com/withastro/astro"
+/>
+
+<LinkCard
+  title="Starlight"
+  description="Added new features and documentation improvements."
+  href="https://github.com/withastro/starlight"
+/>
+
+---
+
+## Technologies I Work With
+
+<CardGrid>
+  <Card title="Frontend" icon="laptop">
+    React, Vue, Astro, TypeScript, Tailwind CSS
+  </Card>
+  <Card title="Backend" icon="server">
+    Node.js, Python, Go, PostgreSQL, Redis
+  </Card>
+  <Card title="DevOps" icon="setting">
+    Docker, Kubernetes, AWS, GitHub Actions
+  </Card>
+  <Card title="Tools" icon="pencil">
+    Figma, VS Code, Neovim, Git
+  </Card>
+</CardGrid>
