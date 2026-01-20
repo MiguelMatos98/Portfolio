@@ -46,7 +46,7 @@ function getLanguageColor(language: string): string {
 
 <div class="github-portfolio not-content">
   <!-- Profile Header -->
-  <div class="profile-header">
+  <div class="profile-header animate-slide-in" style="--delay: 0">
     <img src={data.user.avatar_url} alt={data.user.name || data.user.login} class="avatar" />
     <div class="profile-info">
       <h2 class="profile-name">{data.user.name || data.user.login}</h2>
@@ -58,7 +58,7 @@ function getLanguageColor(language: string): string {
   </div>
 
   <!-- Stats -->
-  <div class="stats-grid">
+  <div class="stats-grid animate-slide-in" style="--delay: 1">
     <div class="stat-card">
       <span class="stat-value">{data.user.public_repos}</span>
       <span class="stat-label">Repositories</span>
@@ -79,11 +79,11 @@ function getLanguageColor(language: string): string {
 
   <!-- Top Languages -->
   {data.topLanguages.length > 0 && (
-    <div class="languages-section">
+    <div class="languages-section animate-slide-in" style="--delay: 2">
       <h3>Top Languages</h3>
       <div class="languages-list">
-        {data.topLanguages.slice(0, 8).map((lang) => (
-          <span class="language-tag" style={`--lang-color: ${getLanguageColor(lang.name)}`}>
+        {data.topLanguages.slice(0, 8).map((lang, i) => (
+          <span class="language-tag animate-pop-in" style={`--lang-color: ${getLanguageColor(lang.name)}; --pop-delay: ${i}`}>
             <span class="language-dot" />
             {lang.name}
             <span class="language-count">{lang.count}</span>
@@ -94,11 +94,11 @@ function getLanguageColor(language: string): string {
   )}
 
   <!-- Repositories -->
-  <div class="repos-section">
+  <div class="repos-section animate-slide-in" style="--delay: 3">
     <h3>Featured Repositories</h3>
     <div class="repos-grid">
-      {displayRepos.map((repo: GitHubRepo) => (
-        <a href={repo.html_url} target="_blank" rel="noopener noreferrer" class="repo-card">
+      {displayRepos.map((repo: GitHubRepo, i) => (
+        <a href={repo.html_url} target="_blank" rel="noopener noreferrer" class="repo-card animate-fade-up" style={`--fade-delay: ${i}`}>
           <div class="repo-header">
             <svg class="repo-icon" viewBox="0 0 16 16" fill="currentColor">
               <path d="M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1 0-1.5h1.75v-2h-8a1 1 0 0 0-.714 1.7.75.75 0 1 1-1.072 1.05A2.495 2.495 0 0 1 2 11.5Zm10.5-1h-8a1 1 0 0 0-1 1v6.708A2.486 2.486 0 0 1 4.5 9h8ZM5 12.25a.25.25 0 0 1 .25-.25h3.5a.25.25 0 0 1 .25.25v3.25a.25.25 0 0 1-.4.2l-1.45-1.087a.249.249 0 0 0-.3 0L5.4 15.7a.25.25 0 0 1-.4-.2Z" />
@@ -137,14 +137,99 @@ function getLanguageColor(language: string): string {
   </div>
 
   <!-- View All Link -->
-  <div class="view-all">
+  <div class="view-all animate-slide-in" style="--delay: 4">
     <a href={data.user.html_url} target="_blank" rel="noopener noreferrer" class="view-all-link">
-      View all repositories on GitHub →
+      View all repositories on GitHub
+      <span class="arrow">→</span>
     </a>
   </div>
 </div>
 
 <style>
+  /* Keyframe Animations */
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(15px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes popIn {
+    0% {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+    70% {
+      transform: scale(1.05);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0 var(--sl-color-accent);
+    }
+    50% {
+      box-shadow: 0 0 0 4px transparent;
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  /* Animation Classes */
+  .animate-slide-in {
+    opacity: 0;
+    animation: slideIn 0.5s ease-out forwards;
+    animation-delay: calc(var(--delay, 0) * 0.1s);
+  }
+
+  .animate-fade-up {
+    opacity: 0;
+    animation: fadeUp 0.4s ease-out forwards;
+    animation-delay: calc(0.3s + var(--fade-delay, 0) * 0.08s);
+  }
+
+  .animate-pop-in {
+    opacity: 0;
+    animation: popIn 0.3s ease-out forwards;
+    animation-delay: calc(0.2s + var(--pop-delay, 0) * 0.05s);
+  }
+
+  /* Respect reduced motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-slide-in,
+    .animate-fade-up,
+    .animate-pop-in {
+      animation: none;
+      opacity: 1;
+    }
+  }
+
   .github-portfolio {
     display: flex;
     flex-direction: column;
@@ -162,6 +247,13 @@ function getLanguageColor(language: string): string {
     height: 80px;
     border-radius: 50%;
     border: 2px solid var(--sl-color-gray-5);
+    transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .avatar:hover {
+    transform: scale(1.08);
+    border-color: var(--sl-color-accent);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--sl-color-accent) 30%, transparent);
   }
 
   .profile-info {
@@ -213,12 +305,24 @@ function getLanguageColor(language: string): string {
     background: var(--sl-color-gray-6);
     border: 1px solid var(--sl-color-gray-5);
     border-radius: 0.5rem;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--sl-color-accent);
+    box-shadow: 0 8px 24px -8px color-mix(in srgb, var(--sl-color-accent) 20%, transparent);
   }
 
   .stat-value {
     font-size: 1.5rem;
     font-weight: 700;
     color: var(--sl-color-white);
+    transition: color 0.2s ease;
+  }
+
+  .stat-card:hover .stat-value {
+    color: var(--sl-color-accent);
   }
 
   .stat-label {
@@ -252,6 +356,14 @@ function getLanguageColor(language: string): string {
     border-radius: 2rem;
     font-size: 0.85rem;
     color: var(--sl-color-white);
+    cursor: default;
+    transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  }
+
+  .language-tag:hover {
+    transform: translateY(-2px);
+    border-color: var(--lang-color);
+    background: color-mix(in srgb, var(--lang-color) 10%, var(--sl-color-gray-6));
   }
 
   .language-dot {
@@ -259,6 +371,12 @@ function getLanguageColor(language: string): string {
     height: 10px;
     border-radius: 50%;
     background: var(--lang-color);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .language-tag:hover .language-dot {
+    transform: scale(1.2);
+    box-shadow: 0 0 8px var(--lang-color);
   }
 
   .language-count {
@@ -286,11 +404,14 @@ function getLanguageColor(language: string): string {
     border: 1px solid var(--sl-color-gray-5);
     border-radius: 0.5rem;
     text-decoration: none;
-    transition: border-color 0.2s;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
   }
 
   .repo-card:hover {
+    transform: translateY(-6px);
     border-color: var(--sl-color-accent);
+    box-shadow: 0 12px 32px -12px color-mix(in srgb, var(--sl-color-accent) 25%, transparent);
+    background: color-mix(in srgb, var(--sl-color-accent) 3%, var(--sl-color-gray-6));
   }
 
   .repo-header {
@@ -305,6 +426,12 @@ function getLanguageColor(language: string): string {
     height: 16px;
     color: var(--sl-color-gray-2);
     flex-shrink: 0;
+    transition: color 0.2s ease, transform 0.2s ease;
+  }
+
+  .repo-card:hover .repo-icon {
+    color: var(--sl-color-accent);
+    transform: rotate(-5deg);
   }
 
   .repo-name {
@@ -313,6 +440,11 @@ function getLanguageColor(language: string): string {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    transition: letter-spacing 0.2s ease;
+  }
+
+  .repo-card:hover .repo-name {
+    letter-spacing: 0.02em;
   }
 
   .repo-description {
@@ -363,18 +495,61 @@ function getLanguageColor(language: string): string {
   }
 
   .view-all-link {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
     padding: 0.75rem 1.5rem;
     color: var(--sl-color-accent);
     font-weight: 500;
     text-decoration: none;
     border: 1px solid var(--sl-color-accent);
     border-radius: 0.5rem;
-    transition: background 0.2s, color 0.2s;
+    transition: background 0.25s ease, color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .view-all-link::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--sl-color-accent) 20%, transparent),
+      transparent
+    );
+    transform: translateX(-100%);
+    transition: transform 0.5s ease;
+  }
+
+  .view-all-link:hover::before {
+    transform: translateX(100%);
   }
 
   .view-all-link:hover {
     background: var(--sl-color-accent);
     color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px -8px var(--sl-color-accent);
+  }
+
+  .view-all-link .arrow {
+    display: inline-block;
+    transition: transform 0.25s ease;
+  }
+
+  .view-all-link:hover .arrow {
+    transform: translateX(4px);
+  }
+
+  /* Star hover effect for repo cards */
+  .repo-stars svg {
+    transition: transform 0.2s ease, color 0.2s ease;
+  }
+
+  .repo-card:hover .repo-stars svg {
+    color: #fbbf24;
+    transform: scale(1.15) rotate(10deg);
   }
 </style>
