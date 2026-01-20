@@ -10,6 +10,8 @@ import mdx from '@astrojs/mdx';
 
 // https://astro.build/config
 export default defineConfig({
+    site: 'https://MiguelMatos98.github.io',
+    base: '/Portfolio',
     output: "static",
   image: {
     domains: ["images.unsplash.com"],
