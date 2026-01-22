@@ -23,20 +23,8 @@ export default defineConfig({
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/withastro/starlight' }],
       sidebar: [
           {
-              label: 'Guides',
-              autogenerate: { directory: 'guides' },
-          },
-          {
-              label: 'Reference',
-              autogenerate: { directory: 'reference' },
-          },
-          {
                 label: 'Projects',
                 autogenerate: { directory: 'projects' },
-          },
-                    {
-                label: 'Work',
-                autogenerate: { directory: 'work' },
           }
       ],
 
