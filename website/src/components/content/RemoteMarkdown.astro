@@ -1,0 +1,53 @@
+---
+/**
+ * Fetches and renders markdown from a remote URL at build time.
+ * Content stays in sync with the source on every build.
+ */
+interface Props {
+  url: string;
+  /** Optional: strip the first H1 heading (useful if you have your own title) */
+  stripTitle?: boolean;
+}
+
+const { url, stripTitle = true } = Astro.props;
+
+let content = '';
+let error = '';
+
+try {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch: ${response.status}`);
+  }
+  content = await response.text();
+
+  // Optionally strip the first H1 heading
+  if (stripTitle) {
+    content = content.replace(/^#\s+.+\n+/, '');
+  }
+} catch (e) {
+  error = e instanceof Error ? e.message : 'Failed to fetch content';
+  console.error(`RemoteMarkdown: ${error} from ${url}`);
+}
+---
+
+{error ? (
+  <aside class="remote-error">
+    <p>Could not load content from <a href={url}>{url}</a></p>
+  </aside>
+) : (
+  <div class="remote-content" set:html={content} />
+)}
+
+<style>
+  .remote-error {
+    padding: 1rem;
+    background: var(--sl-color-red-low, hsl(0 50% 20%));
+    border: 1px solid var(--sl-color-red, hsl(0 60% 50%));
+    border-radius: 0.5rem;
+  }
+
+  .remote-content {
+    /* Markdown will be rendered as HTML, inherit styles */
+  }
+</style>

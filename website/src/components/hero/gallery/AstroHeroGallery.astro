@@ -1,0 +1,533 @@
+---
+import { getCollection } from 'astro:content';
+import type { GallerySlide, GalleryConfig } from './galleryService';
+import { defaultConfig } from './galleryService';
+
+interface Props {
+  slides?: GallerySlide[];
+  config?: GalleryConfig;
+  class?: string;
+  filterWithImages?: boolean;
+  limit?: number;
+}
+
+const {
+  slides: customSlides,
+  config: userConfig,
+  class: className,
+  filterWithImages = true,
+  limit = 6
+} = Astro.props;
+
+const config = { ...defaultConfig, ...userConfig };
+
+let projectSlides: GallerySlide[] = [];
+
+if (!customSlides) {
+  const allProjects = await getCollection('docs', ({ id }) => {
+    return id.startsWith('projects/') && !id.endsWith('index.mdx') && !id.endsWith('github.mdx');
+  });
+
+  // Access frontmatter including custom fields via data + any extra fields
+  projectSlides = allProjects
+    .slice(0, limit)
+    .map((project) => {
+      // Starlight puts custom frontmatter fields in data
+      const frontmatter = project.data as Record<string, unknown>;
+      const coverImage = frontmatter.coverImage as string | undefined;
+      const slug = project.id.replace('projects/', '').replace('.mdx', '');
+
+      return {
+        image: coverImage || 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1920&h=1080&fit=crop',
+        title: frontmatter.title as string,
+        description: frontmatter.description as string | undefined,
+        href: `/projects/${slug}/`,
+        alt: frontmatter.title as string,
+      };
+    })
+    .filter((slide) => {
+      // Filter after mapping so we can still show projects without images if filterWithImages is false
+      if (filterWithImages) {
+        return slide.image !== 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1920&h=1080&fit=crop';
+      }
+      return true;
+    });
+}
+
+const slides = customSlides || projectSlides;
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+const totalSlides = slides.length;
+
+function generateGridTemplate(activeIndex: number): string {
+  if (totalSlides === 0) return '1fr';
+  return Array.from({ length: totalSlides })
+    .map((_, i) => (i === activeIndex ? '20fr' : '1fr'))
+    .join(' ');
+}
+
+const initialGrid = generateGridTemplate(0);
+---
+
+<div
+  class:list={['hero-gallery-wrapper not-content', className]}
+  data-gallery-container
+  style={`
+    --radius: ${config.radius}rem;
+    --button-width: ${config.buttonWidth}rem;
+    --transition-duration: ${config.transitionDuration}s;
+    --total-slides: ${totalSlides};
+    --active-grid: ${initialGrid};
+  `}
+>
+  <div class="gallery-tablist" role="tablist" aria-label="Project gallery">
+    {slides.map((slide, index) => (
+      <div class="gallery-tab-wrapper" style={`justify-content: ${index === 0 ? 'flex-start' : 'flex-end'}`}>
+        <button
+          role="tab"
+          class="gallery-tab"
+          aria-selected={index === 0 ? 'true' : 'false'}
+          aria-controls={`panel-${index}`}
+          id={`tab-${index}`}
+          tabindex={index === 0 ? 0 : -1}
+          data-index={index}
+        >
+          <span class="sr-only">Slide {index + 1}: {slide.title}</span>
+        </button>
+      </div>
+    ))}
+  </div>
+
+  <div class="gallery-panels">
+    {slides.map((slide, index) => (
+      <div
+        role="tabpanel"
+        class="gallery-panel"
+        id={`panel-${index}`}
+        aria-labelledby={`tab-${index}`}
+        data-active={index === 0 ? 'true' : 'false'}
+        data-index={index}
+        style={`z-index: ${totalSlides - index}; --index: ${index};`}
+        inert={index !== 0 ? true : undefined}
+      >
+        <a
+          href={slide.href ? basePath + slide.href : undefined}
+          class="gallery-panel-content"
+          data-has-link={slide.href ? 'true' : 'false'}
+        >
+          <img
+            src={slide.image}
+            alt={slide.alt || slide.title}
+            class="gallery-image"
+            loading={index === 0 ? 'eager' : 'lazy'}
+          />
+          <div class="gallery-overlay">
+            <div class="gallery-text">
+              <h2 class="gallery-title">{slide.title}</h2>
+              {slide.description && (
+                <p class="gallery-description">{slide.description}</p>
+              )}
+              {slide.href && (
+                <span class="gallery-link-hint">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                  Click to view project
+                </span>
+              )}
+            </div>
+          </div>
+        </a>
+      </div>
+    ))}
+  </div>
+
+  <span class="sr-only" aria-live="polite" data-gallery-status>
+    Showing slide 1 of {totalSlides}
+  </span>
+</div>
+
+<script>
+  // Lightweight vanilla JS for interactions - no React needed!
+  document.querySelectorAll('[data-gallery-container]').forEach((container) => {
+    const gallery = container as HTMLElement;
+    const panels = gallery.querySelectorAll('.gallery-panel');
+    const tabs = gallery.querySelectorAll('.gallery-tab');
+    const status = gallery.querySelector('[data-gallery-status]');
+
+    let activeIndex = 0;
+    let isDragging = false;
+    let startX = 0;
+    let currentX = 0;
+
+    const totalSlides = panels.length;
+
+    function generateGrid(active: number): string {
+      return Array.from({ length: totalSlides })
+        .map((_, i) => (i === active ? '20fr' : '1fr'))
+        .join(' ');
+    }
+
+    function setActiveSlide(index: number) {
+      if (index < 0 || index >= totalSlides || index === activeIndex) return;
+
+      // Update previous
+      panels[activeIndex]?.setAttribute('data-active', 'false');
+      panels[activeIndex]?.setAttribute('inert', '');
+      tabs[activeIndex]?.setAttribute('aria-selected', 'false');
+      tabs[activeIndex]?.setAttribute('tabindex', '-1');
+
+      // Update new
+      activeIndex = index;
+      panels[activeIndex]?.setAttribute('data-active', 'true');
+      panels[activeIndex]?.removeAttribute('inert');
+      tabs[activeIndex]?.setAttribute('aria-selected', 'true');
+      tabs[activeIndex]?.setAttribute('tabindex', '0');
+
+      // Update grid
+      gallery.style.setProperty('--active-grid', generateGrid(activeIndex));
+
+      // Update status
+      if (status) {
+        status.textContent = `Showing slide ${activeIndex + 1} of ${totalSlides}`;
+      }
+    }
+
+    // Tab clicks
+    tabs.forEach((tab, index) => {
+      tab.addEventListener('click', () => setActiveSlide(index));
+    });
+
+    // Panel clicks (for inactive panels)
+    panels.forEach((panel, index) => {
+      panel.addEventListener('click', (e) => {
+        if (index !== activeIndex) {
+          e.preventDefault();
+          setActiveSlide(index);
+        }
+      });
+    });
+
+    // Keyboard navigation
+    gallery.addEventListener('keydown', (e) => {
+      const key = (e as KeyboardEvent).key;
+      switch (key) {
+        case 'ArrowLeft':
+          e.preventDefault();
+          setActiveSlide(activeIndex === 0 ? totalSlides - 1 : activeIndex - 1);
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          setActiveSlide(activeIndex === totalSlides - 1 ? 0 : activeIndex + 1);
+          break;
+        case 'Home':
+          e.preventDefault();
+          setActiveSlide(0);
+          break;
+        case 'End':
+          e.preventDefault();
+          setActiveSlide(totalSlides - 1);
+          break;
+      }
+    });
+
+    // Touch/drag support
+    const panelsContainer = gallery.querySelector('.gallery-panels') as HTMLElement;
+
+    panelsContainer?.addEventListener('pointerdown', (e) => {
+      isDragging = true;
+      startX = e.clientX;
+      currentX = startX;
+      gallery.setAttribute('data-dragging', '');
+    });
+
+    document.addEventListener('pointermove', (e) => {
+      if (!isDragging) return;
+      currentX = e.clientX;
+    });
+
+    document.addEventListener('pointerup', () => {
+      if (!isDragging) return;
+
+      const diff = currentX - startX;
+      const threshold = 50;
+
+      if (Math.abs(diff) > threshold) {
+        if (diff < 0) {
+          setActiveSlide(activeIndex === totalSlides - 1 ? 0 : activeIndex + 1);
+        } else {
+          setActiveSlide(activeIndex === 0 ? totalSlides - 1 : activeIndex - 1);
+        }
+      }
+
+      isDragging = false;
+      gallery.removeAttribute('data-dragging');
+    });
+  });
+</script>
+
+<style>
+  .hero-gallery-wrapper {
+    --gallery-accent: var(--sl-color-accent, hsl(330 80% 60%));
+    --gallery-accent-high: var(--sl-color-accent-high, hsl(330 80% 70%));
+    --gallery-bg: var(--sl-color-bg, hsl(0 0% 5%));
+    --gallery-text: var(--sl-color-text, hsl(0 0% 100%));
+    --gallery-border: var(--sl-color-gray-5, hsl(0 0% 20%));
+
+    width: 100%;
+    max-width: 1200px;
+    aspect-ratio: 16 / 9;
+    margin: 0 auto;
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+    outline: none;
+    container-type: inline-size;
+    touch-action: pan-y pinch-zoom;
+    background: var(--gallery-bg);
+  }
+
+  .hero-gallery-wrapper:focus-visible {
+    outline: 2px solid var(--gallery-accent);
+    outline-offset: 2px;
+  }
+
+  .hero-gallery-wrapper[data-dragging] {
+    cursor: grabbing;
+  }
+
+  .gallery-tablist {
+    display: grid;
+    grid-template-columns: var(--active-grid);
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    pointer-events: none;
+    transition: grid-template-columns var(--transition-duration) cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+
+  .gallery-tab-wrapper {
+    display: flex;
+  }
+
+  .gallery-tab {
+    width: var(--button-width);
+    height: 100%;
+    pointer-events: all;
+    background: transparent;
+    border: none;
+    cursor: grab;
+    opacity: 0;
+    padding: 0;
+  }
+
+  .gallery-tab[aria-selected="true"] {
+    cursor: default;
+  }
+
+  .gallery-tab:focus-visible {
+    opacity: 1;
+    outline: 2px solid var(--gallery-accent);
+    outline-offset: -4px;
+  }
+
+  .gallery-panels {
+    display: grid;
+    grid-template-columns: var(--active-grid);
+    height: 100%;
+    transition: grid-template-columns var(--transition-duration) cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+
+  .hero-gallery-wrapper[data-dragging] .gallery-panels,
+  .hero-gallery-wrapper[data-dragging] .gallery-tablist {
+    transition: none;
+  }
+
+  .gallery-panel {
+    position: relative;
+    height: 100%;
+    min-width: var(--button-width);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .gallery-panel-content {
+    display: block;
+    position: absolute;
+    inset: 0;
+    right: 0;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--gallery-border);
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .gallery-panel[data-active="true"] .gallery-panel-content:hover {
+    border-color: var(--gallery-accent);
+  }
+
+  .gallery-panel:first-child .gallery-panel-content {
+    width: calc(100cqi - ((var(--total-slides) - 1) * var(--button-width)));
+  }
+
+  .gallery-panel:not(:first-child) .gallery-panel-content {
+    width: calc(100cqi - ((var(--total-slides) - 1) * var(--button-width)) + (var(--radius) * 2));
+  }
+
+  .gallery-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+  }
+
+  .gallery-panel[data-active="true"]:hover .gallery-image {
+    transform: scale(1.02);
+  }
+
+  .gallery-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      transparent 30%,
+      hsl(0 0% 0% / 0.4) 50%,
+      hsl(0 0% 0% / 0.85)
+    );
+    display: flex;
+    align-items: flex-end;
+    padding: 2rem;
+  }
+
+  .gallery-panel:not(:first-child) .gallery-overlay {
+    padding-left: calc(var(--radius) * 2 + 2rem);
+  }
+
+  .gallery-text {
+    color: var(--gallery-text);
+    max-width: 85%;
+    opacity: 0;
+    transform: translateY(1rem);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    transition-delay: 0s;
+  }
+
+  .gallery-panel[data-active="true"] .gallery-text {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.3s;
+  }
+
+  .gallery-title {
+    font-size: clamp(1.5rem, 5cqi, 3rem);
+    font-weight: 600;
+    line-height: 1.1;
+    margin: 0 0 0.5rem;
+    text-wrap: balance;
+    color: var(--gallery-text);
+  }
+
+  .gallery-description {
+    font-size: clamp(0.875rem, 2cqi, 1.125rem);
+    font-weight: 400;
+    line-height: 1.4;
+    margin: 0 0 1.25rem;
+    opacity: 0.85;
+    max-width: 600px;
+  }
+
+  .gallery-link-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    opacity: 0.7;
+    margin-top: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .gallery-link-hint svg {
+    width: 1em;
+    height: 1em;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  @container (max-width: 500px) {
+    .gallery-tablist {
+      grid-template-columns: 1fr;
+      grid-template-rows: var(--active-grid);
+    }
+
+    .gallery-tab {
+      width: 100%;
+      height: var(--button-width);
+    }
+
+    .gallery-panels {
+      grid-template-columns: 1fr;
+      grid-template-rows: var(--active-grid);
+    }
+
+    .gallery-panel {
+      min-height: var(--button-width);
+      min-width: unset;
+    }
+
+    .gallery-panel-content {
+      width: 100% !important;
+      height: calc(100cqh - ((var(--total-slides) - 1) * var(--button-width)));
+    }
+
+    .gallery-panel:not(:first-child) .gallery-panel-content {
+      height: calc(100cqh - ((var(--total-slides) - 1) * var(--button-width)) + (var(--radius) * 2));
+    }
+
+    .gallery-overlay {
+      padding: 1.5rem;
+    }
+
+    .gallery-panel:not(:first-child) .gallery-overlay {
+      padding-left: 1.5rem;
+      padding-top: calc(var(--radius) * 2 + 1.5rem);
+    }
+
+    .gallery-text {
+      max-width: 100%;
+    }
+
+    .gallery-description {
+      display: none;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .hero-gallery-wrapper {
+      aspect-ratio: 9 / 16;
+      max-height: 80vh;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gallery-panels,
+    .gallery-tablist,
+    .gallery-text,
+    .gallery-image {
+      transition: none;
+    }
+  }
+</style>
